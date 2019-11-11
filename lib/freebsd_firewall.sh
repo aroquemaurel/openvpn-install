@@ -16,7 +16,7 @@ ifconfig ${TUN} name tun0
 write_rc_conf() {
 echo 'openvpn_enable="YES"
 openvpn_if="tun"
-openvpn_configfile="/usr/local/etc/openvpn/openvpn.conf"
+openvpn_configfile="'$path_openvpn'/server/openvpn.conf"
 openvpn_dir="/usr/local/etc/openvpn/"
 cloned_interfaces="tun"
 gateway_enable="YES"
@@ -33,4 +33,4 @@ write_logs() {
 		echo " !openvpn"
 		echo "*.* /var/log/openvpn.log" >> /etc/syslog.conf
 	fi
-}
+

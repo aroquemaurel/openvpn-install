@@ -55,7 +55,7 @@ write_client_ovpn () {
 	cat $path_openvpn/keys/"$1".key >> $client_file
 	echo "</key>" >> $client_file
 	echo "<tls-crypt>" >> $client_file
-	sed -ne '/BEGIN OpenVPN Static key/,$ p' $path_openvpn/server/ta.key >> $client_file
+	sed -ne '/BEGIN OpenVPN Static key/,$ p' $path_openvpn/keys/ta.key >> $client_file
 	echo "</tls-crypt>" >> $client_file
 }
 

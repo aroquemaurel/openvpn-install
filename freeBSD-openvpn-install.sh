@@ -1,4 +1,6 @@
 #!/bin/bash
+path_openvpn="/usr/local/etc/openvpn"
+
 source lib/utils.sh
 source lib/openvpn.sh
 source lib/ask_infos.sh
@@ -10,7 +12,6 @@ if [[ "$EUID" -ne 0 ]]; then
 	exit
 fi
 
-path_openvpn="/usr/local/etc/openvpn"
 
 
 echo
@@ -62,7 +63,7 @@ openvpn --genkey --secret ta.key
 cp pki/dh.pem pki/ca.crt pki/issued/openvpn-server.crt pki/private/openvpn-server.key $path_openvpn/keys
 cp ta.key $path_openvpn/keys
 cp pki/issued/$client.crt pki/private/$client.key $path_openvpn/keys
-cd - # TODO : go to script path
+cd - >> /dev/null # TODO : go to script path
 
 if [[ ! -e $path_openvpn/server ]]; then
 	mkdir -p $path_openvpn/server
