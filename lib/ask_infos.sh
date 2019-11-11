@@ -32,7 +32,7 @@ ask_port() {
 }
 
 # Return $client
-ask_name_client() {
+ask_client_name() {
 	echo "Finally, tell me a name for the client certificate."
 	read -p "Client name [client]: " unsanitized_client
 	# Allow a limited set of characters to avoid conflicts
@@ -40,7 +40,3 @@ ask_name_client() {
 	[[ -z "$client" ]] && client="client"
 }
 
-ask_any_key() {
-	echo "Okay, that was all I needed. We are ready to set up your OpenVPN server now."
-	read -n1 -r -p "Press any key to continue..."
-}

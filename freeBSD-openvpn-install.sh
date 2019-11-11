@@ -1,6 +1,9 @@
 #!/bin/bash
+source lib/utils.sh
 source lib/openvpn.sh
 source lib/ask_infos.sh
+
+source lib/freebsd_firewall.sh
 
 if [[ "$EUID" -ne 0 ]]; then
 	echo "Sorry, you need to run this as root"
@@ -27,10 +30,10 @@ ask_port
 #	read -p "DNS [1]: " dns
 #done
 
-echo
+echo_empty_line
 ask_client_name
 
-echo
+echo_empty_line
 ask_any_key
 
 pkg update & pkg upgrade -y && pkg install -y nano openvpn mpack
@@ -40,13 +43,20 @@ if [[ ! -e $path_openvpn/keys ]]; then
 fi
 
 cp -r /usr/local/share/easy-rsa $path_openvpn/easy-rsa
-cp rsa_keys $path_openvpn/easy-rsa/vars
+
+echo 'set_var EASYRSA_REQ_COUNTRY	"FR"
+set_var EASYRSA_REQ_PROVINCE	"France"
+set_var EASYRSA_REQ_CITY	"Rueil-Malmaison"
+set_var EASYRSA_REQ_ORG		"Copyleft Certificate Co"
+set_var EASYRSA_REQ_EMAIL	"satenske@roquemaurel.pro"
+set_var EASYRSA_KEY_SIZE	2048' > $path_openvpn/easy-rsa/vars
+
 cd $path_openvpn/easy-rsa
-#./easyrsa.real init-pki
-#./easyrsa.real build-ca nopass
-#./easyrsa.real build-server-full openvpn-server nopass
-#./easyrsa.real build-client-full $client nopass
-#./easyrsa.real gen-dh
+./easyrsa.real init-pki
+./easyrsa.real build-ca nopass
+./easyrsa.real build-server-full openvpn-server nopass
+./easyrsa.real build-client-full $client nopass
+./easyrsa.real gen-dh
 
 openvpn --genkey --secret ta.key
 cp pki/dh.pem pki/ca.crt pki/issued/openvpn-server.crt pki/private/openvpn-server.key $path_openvpn/keys
@@ -57,56 +67,14 @@ cd - # TODO : go to script path
 if [[ ! -e $path_openvpn/server ]]; then
 	mkdir -p $path_openvpn/server
 fi
-# Generate openvpn.conf
-echo "local $ip
-port $port
-proto $protocol
-dev tun
-ca ca.crt
-cert server.crt
-key keys/openvpn-server.key
-dh dh.pem
-auth SHA512
-tls-crypt tc.key
-topology subnet
-server 10.8.0.0 255.255.255.0
-ifconfig-pool-persist ipp.txt" > $path_openvpn/server/openvpn.conf
 
-echo 'push "redirect-gateway def1 bypass-dhcp"
-cipher AES-256-CBC
-user nobody
-group nobody 
-persist-key
-persist-tun
-status openvpn-status.log
-verb 3' >> $path_openvpn/server/openvpn.conf
+write_server_conf
 
-echo '#!/bin/sh
-EPAIR=$(/sbin/ifconfig -l | tr " " "\n" | /usr/bin/grep epair)
-ipfw -q -f flush
-ipfw -q nat 1 config if ${EPAIR}
-ipfw -q add nat 1 all from 10.8.0.0/24 to any out via ${EPAIR}
-ipfw -q add nat 1 all from any to any in via ${EPAIR}
+write_client_conf
+write_client_ovpn $client
 
-TUN=$(/sbin/ifconfig -l | tr " " "\n" | /usr/bin/grep tun)
-ifconfig ${TUN} name tun0 
-' >> /usr/local/etc/ipfw.rules
+write_ipfw
 
-echo 'openvpn_enable="YES"
-openvpn_if="tun"
-openvpn_configfile="/usr/local/etc/openvpn/openvpn.conf"
-openvpn_dir="/usr/local/etc/openvpn/"
-cloned_interfaces="tun"
-gateway_enable="YES"
-firewall_enable="YES"
-firewall_script="/usr/local/etc/ipfw.rules"' >> /etc/rc.conf
+write_rc_conf
 
-if ! grep -q openvpn /etc/newsyslog.conf; then
-	echo " /var/log/openvpn.log 600 30 * @T00 ZC" >> /etc/newsyslog.conf
-fi
-
-if ! grep -q openvpn /etc/syslog.conf; then
-	echo " !openvpn
-	*.* /var/log/openvpn.log" >> /etc/syslog.conf
-fi
-
+write_logs
