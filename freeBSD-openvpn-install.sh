@@ -1,5 +1,6 @@
 #!/bin/bash
 source lib/openvpn.sh
+source lib/ask_infos.sh
 
 if [[ "$EUID" -ne 0 ]]; then
 	echo "Sorry, you need to run this as root"
