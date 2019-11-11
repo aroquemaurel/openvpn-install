@@ -1,4 +1,6 @@
 #!/bin/bash
+source lib/openvpn.sh
+
 if [[ "$EUID" -ne 0 ]]; then
 	echo "Sorry, you need to run this as root"
 	exit
@@ -6,62 +8,25 @@ fi
 
 path_openvpn="/usr/local/etc/openvpn"
 
-new_client () {
-	# Generates the custom client.ovpn
-	{
-	cat $path_openvpn/server/client-common.txt
-	echo "<ca>"
-	cat path_openvpn/server/easy-rsa/pki/ca.crt
-	echo "</ca>"
-	echo "<cert>"
-	sed -ne '/BEGIN CERTIFICATE/,$ p' $path_openvpn/server/easy-rsa/pki/issued/"$1".crt
-	echo "</cert>"
-	echo "<key>"
-	cat $path_openvpn/server/easy-rsa/pki/private/"$1".key
-	echo "</key>"
-	echo "<tls-crypt>"
-	sed -ne '/BEGIN OpenVPN Static key/,$ p' $path_openvpn/server/tc.key
-	echo "</tls-crypt>"
-	} > ~/"$1".ovpn
-}
 
 echo
-echo "Which protocol do you want for OpenVPN connections?"
-echo "   1) UDP (recommended)"
-echo "   2) TCP"
-read -p "Protocol [1]: " protocol
-until [[ -z "$protocol" || "$protocol" =~ ^[12]$ ]]; do
-	echo "$protocol: invalid selection."
-	read -p "Protocol [1]: " protocol
-done
-case "$protocol" in
-	1|"") 
-	protocol=udp
-	;;
-	2) 
-	protocol=tcp
-	;;
-esac
+protocol=ask_protocol()
 echo
-echo "What port do you want OpenVPN listening to?"
-read -p "Port [1194]: " port
-until [[ -z "$port" || "$port" =~ ^[0-9]+$ && "$port" -le 65535 ]]; do
-	echo "$port: invalid selection."
-	read -p "Port [1194]: " port
-done
-[[ -z "$port" ]] && port="1194"
+port=ask_port()
 echo
-echo "Which DNS do you want to use with the VPN?"
-echo "   1) Current system resolvers"
-echo "   2) 1.1.1.1"
-echo "   3) Google"
-echo "   4) OpenDNS"
-echo "   5) Verisign"
-read -p "DNS [1]: " dns
-until [[ -z "$dns" || "$dns" =~ ^[1-5]$ ]]; do
-	echo "$dns: invalid selection."
-	read -p "DNS [1]: " dns
-done
+
+#echo "Which DNS do you want to use with the VPN?"
+#echo "   1) Current system resolvers"
+#echo "   2) 1.1.1.1"
+#echo "   3) Google"
+#echo "   4) OpenDNS"
+#echo "   5) Verisign"
+#read -p "DNS [1]: " dns
+#until [[ -z "$dns" || "$dns" =~ ^[1-5]$ ]]; do
+	#echo "$dns: invalid selection."
+#	read -p "DNS [1]: " dns
+#done
+
 echo
 echo "Finally, tell me a name for the client certificate."
 read -p "Client name [client]: " unsanitized_client
