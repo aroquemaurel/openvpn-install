@@ -11,10 +11,9 @@ path_openvpn="/usr/local/etc/openvpn"
 
 
 echo
-protocol=ask_protocol()
-echo
-port=ask_port()
-echo
+
+ask_protocol
+ask_port
 
 #echo "Which DNS do you want to use with the VPN?"
 #echo "   1) Current system resolvers"
@@ -29,14 +28,10 @@ echo
 #done
 
 echo
-echo "Finally, tell me a name for the client certificate."
-read -p "Client name [client]: " unsanitized_client
-# Allow a limited set of characters to avoid conflicts
-client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
-[[ -z "$client" ]] && client="client"
+ask_client_name
+
 echo
-echo "Okay, that was all I needed. We are ready to set up your OpenVPN server now."
-read -n1 -r -p "Press any key to continue..."
+ask_any_key
 
 pkg update & pkg upgrade -y && pkg install -y nano openvpn mpack
 
@@ -50,12 +45,13 @@ cd $path_openvpn/easy-rsa
 #./easyrsa.real init-pki
 #./easyrsa.real build-ca nopass
 #./easyrsa.real build-server-full openvpn-server nopass
-#./easyrsa.real build-client-full TODO nopass
+#./easyrsa.real build-client-full $client nopass
 #./easyrsa.real gen-dh
+
 openvpn --genkey --secret ta.key
 cp pki/dh.pem pki/ca.crt pki/issued/openvpn-server.crt pki/private/openvpn-server.key $path_openvpn/keys
 cp ta.key $path_openvpn/keys
-cp pki/issued/TODO.crt pki/private/TODO.key $path_openvpn/keys
+cp pki/issued/$client.crt pki/private/$client.key $path_openvpn/keys
 cd - # TODO : go to script path
 
 if [[ ! -e $path_openvpn/server ]]; then

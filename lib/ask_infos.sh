@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# return $protocol
 ask_protocol() {
     echo "Which protocol do you want for OpenVPN connections?"
     echo "   1) UDP (recommended)"
@@ -17,10 +18,9 @@ ask_protocol() {
 	    protocol=tcp
 	    ;;
     esac
-    
-    return $protocol
 }
 
+# Return $port 
 ask_port() {
     echo "What port do you want OpenVPN listening to?"
     read -p "Port [1194]: " port
@@ -29,6 +29,18 @@ ask_port() {
 	    read -p "Port [1194]: " port
     done
     [[ -z "$port" ]] && port="1194"
-    
-    return $port
+}
+
+# Return $client
+ask_name_client() {
+	echo "Finally, tell me a name for the client certificate."
+	read -p "Client name [client]: " unsanitized_client
+	# Allow a limited set of characters to avoid conflicts
+	client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
+	[[ -z "$client" ]] && client="client"
+}
+
+ask_any_key() {
+	echo "Okay, that was all I needed. We are ready to set up your OpenVPN server now."
+	read -n1 -r -p "Press any key to continue..."
 }
