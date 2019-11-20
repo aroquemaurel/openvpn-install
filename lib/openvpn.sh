@@ -1,14 +1,14 @@
 #!/bin/bash
 write_server_conf() {
-echo "port $port
+	echo "port $port
 proto $protocol
 dev tun
-ca ca.crt
-cert server.crt
-key keys/openvpn-server.key
-dh dh.pem
+ca $path_openvpn/keys/ca.crt
+cert $path_openvpn/keys/openvpn-server.crt
+key $path_openvpn/keys/openvpn-server.key
+dh $path_openvpn/keys/dh.pem
 auth SHA512
-tls-crypt tc.key
+tls-crypt $path_openvpn/ta.key
 topology subnet
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt" > $path_openvpn/server/openvpn.conf
@@ -41,22 +41,20 @@ verb 3" > $path_openvpn/server/client-common.txt
 }
 
 write_client_ovpn () {
-	client_file=~/"$1".ovpn
+client_file=~/"$1".ovpn
 
-	# Generates the custom client.ovpn
-	cat $path_openvpn/server/client-common.txt > $client_file
-	echo "<ca>" >> $client_file
-	cat $path_openvpn/keys/ca.crt >> $client_file
-	echo "</ca>" >> $client_file
-	echo "<cert>" >> $client_file
-	sed -ne '/BEGIN CERTIFICATE/,$ p' $path_openvpn/keys/"$1".crt >> $client_file
-	echo "</cert>" >> $client_file
-	echo "<key>" >> $client_file
-	cat $path_openvpn/keys/"$1".key >> $client_file
-	echo "</key>" >> $client_file
-	echo "<tls-crypt>" >> $client_file
-	sed -ne '/BEGIN OpenVPN Static key/,$ p' $path_openvpn/keys/ta.key >> $client_file
-	echo "</tls-crypt>" >> $client_file
+# Generates the custom client.ovpn
+cat $path_openvpn/server/client-common.txt > $client_file
+echo "<ca>" >> $client_file
+cat $path_openvpn/keys/ca.crt >> $client_file
+echo "</ca>" >> $client_file
+echo "<cert>" >> $client_file
+sed -ne '/BEGIN CERTIFICATE/,$ p' $path_openvpn/keys/"$1".crt >> $client_file
+echo "</cert>" >> $client_file
+echo "<key>" >> $client_file
+cat $path_openvpn/keys/"$1".key >> $client_file
+echo "</key>" >> $client_file
+echo "<tls-crypt>" >> $client_file
+sed -ne '/BEGIN OpenVPN Static key/,$ p' $path_openvpn/keys/ta.key >> $client_file
+echo "</tls-crypt>" >> $client_file
 }
-
-
